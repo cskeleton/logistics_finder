@@ -41,8 +41,26 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
 
+      - name: Debug SSH connection
+        run: |
+          echo "Testing connection to VPS..."
+          ping -c 1 ${{ secrets.VPS_HOST }} || echo "Ping failed"
+          echo "SSH key fingerprint:"
+          ssh-keygen -l -f ~/.ssh/id_rsa || echo "No SSH key found"
+
       - name: Add VPS host key to known_hosts
-        run: ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "SSH agent status:"
+          ssh-add -l
+          echo "Testing SSH connection to VPS..."
+          ssh -v -p ${{ secrets.VPS_SSH_PORT }} -o StrictHostKeyChecking=no ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }} 'echo "Connection successful"' || echo "SSH connection failed"
+          echo "Attempting to add host key..."
+          ssh-keyscan -H -v -p ${{ secrets.VPS_SSH_PORT }} ${{ secrets.VPS_HOST }} 2>&1 | tee -a ~/.ssh/known_hosts || {
+            echo "First attempt failed, waiting 5 seconds before retry..."
+            sleep 5
+            ssh-keyscan -H -v -p ${{ secrets.VPS_SSH_PORT }} ${{ secrets.VPS_HOST }} 2>&1 | tee -a ~/.ssh/known_hosts
+          }
 
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v0.1.10
@@ -50,6 +68,7 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          port: ${{ secrets.VPS_SSH_PORT }}
           script: |
             cd ${{ secrets.VPS_DEPLOY_PATH }}
             echo "Logging into GitHub Container Registry on VPS..."
@@ -59,9 +78,9 @@ jobs:
             # 或者使用具体的 commit SHA 标签: docker pull ghcr.io/${{ github.repository }}:${{ github.sha }}
             # 如果使用具体标签，你可能需要更新 docker-compose.yml 中的 image 标签，或者在这里用 sed 等工具修改它
             echo "Stopping old containers..."
-            docker-compose down || true
+            docker compose down || true
             echo "Starting new containers with pulled image..."
-            docker-compose up -d # <--- 注意：这里不再需要 --build
+            docker compose up -d # <--- 注意：这里不再需要 --build
             echo "Removing unused docker images..."
             docker image prune -af || true # 清理旧镜像，包括无标签的（构建缓存等）
             echo "Deployment finished!"
