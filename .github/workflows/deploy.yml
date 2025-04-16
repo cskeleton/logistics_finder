@@ -62,6 +62,17 @@ jobs:
             ssh-keyscan -H -v -p ${{ secrets.VPS_SSH_PORT }} ${{ secrets.VPS_HOST }} 2>&1 | tee -a ~/.ssh/known_hosts
           }
 
+      - name: Copy docker-compose.yml to VPS
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          port: ${{ secrets.VPS_SSH_PORT }}
+          source: "docker-compose.yml"
+          target: "${{ secrets.VPS_DEPLOY_PATH }}"
+          strip_components: 0
+
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v0.1.10
         with:
