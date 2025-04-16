@@ -1,0 +1,67 @@
+name: Build, Push and Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main # 当代码推送到 main 分支时触发
+
+jobs:
+  build-and-deploy: # 合并为一个 Job
+    runs-on: ubuntu-latest
+
+    permissions: # 需要添加权限以写入 GitHub Packages (GHCR)
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }} # 使用触发工作流的用户名
+          password: ${{ secrets.GHCR_PAT }} # 需要创建一个 PAT
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: . # Dockerfile 所在的上下文路径
+          push: true # 推送镜像
+          tags: ghcr.io/${{ github.repository }}:latest,ghcr.io/${{ github.repository }}:${{ github.sha }} # 打两个标签：latest 和 commit SHA
+          cache-from: type=gha # 启用 GitHub Actions 构建缓存 (可选)
+          cache-to: type=gha,mode=max # (可选)
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+
+      - name: Add VPS host key to known_hosts
+        run: ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          script: |
+            cd ${{ secrets.VPS_DEPLOY_PATH }}
+            echo "Logging into GitHub Container Registry on VPS..."
+            echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin # 在 VPS 上登录 GHCR
+            echo "Pulling latest image..."
+            docker pull ghcr.io/${{ github.repository }}:latest # 拉取最新的镜像
+            # 或者使用具体的 commit SHA 标签: docker pull ghcr.io/${{ github.repository }}:${{ github.sha }}
+            # 如果使用具体标签，你可能需要更新 docker-compose.yml 中的 image 标签，或者在这里用 sed 等工具修改它
+            echo "Stopping old containers..."
+            docker-compose down || true
+            echo "Starting new containers with pulled image..."
+            docker-compose up -d # <--- 注意：这里不再需要 --build
+            echo "Removing unused docker images..."
+            docker image prune -af || true # 清理旧镜像，包括无标签的（构建缓存等）
+            echo "Deployment finished!"

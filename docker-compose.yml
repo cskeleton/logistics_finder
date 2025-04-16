@@ -1,0 +1,13 @@
+version: "3.8"
+
+services:
+  logistics_app: # 或者你之前设置的服务名，例如 web
+    # build: .  # <--- 删除或注释掉 build 指令
+    image: ghcr.io/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME:latest # <--- 指定要拉取的镜像
+    ports:
+      - "127.0.0.1:8001:8000"
+    volumes:
+      - /opt/logistics/:/app/data
+    restart: always
+    environment:
+      - TZ=Asia/Shanghai

@@ -1,0 +1,32 @@
+# .gitignore
+
+# macOS 系统文件
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# 忽略.db 文件，如果程序有内置数据库，则命名为别的后缀
+*.db
+
+# 或者忽略特定的数据库文件
+# data/mydatabase.db
+
+# 忽略 Python 缓存等
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# 忽略虚拟环境
+venv/
+*.env
+.env
