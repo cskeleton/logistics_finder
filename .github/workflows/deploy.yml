@@ -3,7 +3,7 @@ name: Build, Push and Deploy to VPS
 on:
   push:
     branches:
-      - main # 当代码推送到 main 分支时触发
+      - master # 当代码推送到 master 分支时触发
 
 jobs:
   build-and-deploy: # 合并为一个 Job
