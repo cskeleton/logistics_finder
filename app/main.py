@@ -5,6 +5,7 @@ from fastapi.templating import Jinja2Templates
 import pandas as pd
 from typing import List, Optional
 import os
+from io import BytesIO
 from . import database
 from .services import excel_service, price_service
 
@@ -35,7 +36,8 @@ async def upload_excel(file: UploadFile = File(...)):
         
         # 读取Excel文件
         try:
-            df = pd.read_excel(file.file)
+            contents = await file.read()
+            df = pd.read_excel(BytesIO(contents))
             print(f"Excel文件读取成功，列名: {df.columns.tolist()}")
         except Exception as e:
             print(f"Excel文件读取失败: {str(e)}")
