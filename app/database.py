@@ -6,7 +6,7 @@ import os
 # 获取当前文件所在目录
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # 数据库文件路径
-DB_PATH = os.path.join(os.path.dirname(BASE_DIR), "logistics.db")
+DB_PATH = os.path.join(BASE_DIR, "data", "logistics.db")
 
 # 创建数据库引擎
 SQLALCHEMY_DATABASE_URL = f"sqlite:///{DB_PATH}"

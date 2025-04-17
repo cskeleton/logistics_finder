@@ -5,9 +5,11 @@ services:
     # build: .  # <--- 删除或注释掉 build 指令
     image: ghcr.io/cskeleton/logistics_finder:latest # <--- 指定要拉取的镜像
     ports:
-      - "127.0.0.1:8001:8000"
+      - "127.0.0.1:18000:8000"
     volumes:
       - /opt/logistics/:/app/data
     restart: always
     environment:
       - TZ=Asia/Shanghai
+    command: >
+      sh -c "/app/scripts/download_data.sh && uvicorn app.main:app --host 0.0.0.0 --port 8000"

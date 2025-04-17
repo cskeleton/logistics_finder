@@ -7,7 +7,7 @@ class RegionService:
         # 获取当前文件所在目录
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         # 行政区划数据库路径
-        self.db_path = os.path.join(base_dir, "db", "adc.sqlite")
+        self.db_path = os.path.join(base_dir, "data", "china.db")
         self.conn = sqlite3.connect(self.db_path)
         self.conn.row_factory = sqlite3.Row
         self.cursor = self.conn.cursor()

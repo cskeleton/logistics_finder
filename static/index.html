@@ -158,6 +158,35 @@
         cursor: pointer;
         font-size: 1.5rem;
       }
+      .upload-modal-content button {
+        background-color: #0d6efd;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        width: 100%;
+        transition: all 0.3s ease;
+      }
+      .upload-modal-content button:hover {
+        background-color: #0b5ed7;
+      }
+      .upload-modal-content button:disabled {
+        cursor: not-allowed;
+        opacity: 0.8;
+      }
+      .upload-modal-content button.uploading {
+        background-color: #ffc107;
+      }
+      .upload-modal-content button.parsing {
+        background-color: #17a2b8;
+      }
+      .upload-modal-content button.success {
+        background-color: #28a745;
+      }
+      .upload-modal-content button.error {
+        background-color: #dc3545;
+      }
       @media (max-width: 768px) {
         body {
           padding: 10px;
@@ -266,7 +295,7 @@
           accept=".xlsx,.xls"
           style="margin-bottom: 15px"
         />
-        <button onclick="uploadFile()">上传</button>
+        <button id="uploadButton" onclick="uploadFile()">上传</button>
       </div>
     </div>
 
@@ -282,6 +311,7 @@
 
       async function uploadFile() {
         const fileInput = document.getElementById("excel-file");
+        const uploadButton = document.getElementById("uploadButton");
         const file = fileInput.files[0];
         if (!file) {
           alert("请选择文件");
@@ -297,6 +327,12 @@
         formData.append("file", file);
 
         try {
+          // 上传中状态
+          uploadButton.disabled = true;
+          uploadButton.classList.add("uploading");
+          uploadButton.textContent = "上传中...";
+
+          // 发送文件到服务器
           const response = await fetch("/upload", {
             method: "POST",
             body: formData,
@@ -308,11 +344,40 @@
             throw new Error(result.detail || "上传失败");
           }
 
-          alert(result.message);
-          hideUploadModal();
-          location.reload();
+          // 文件已上传到服务器，进入解析状态
+          uploadButton.classList.remove("uploading");
+          uploadButton.classList.add("parsing");
+          uploadButton.textContent = "上传成功，解析中...";
+
+          // 开始解析数据
+          const parseResponse = await fetch(`/parse/${result.task_id}`, {
+            method: "POST",
+          });
+
+          const parseResult = await parseResponse.json();
+
+          if (!parseResponse.ok) {
+            throw new Error(parseResult.detail || "解析失败");
+          }
+
+          // 处理成功状态
+          uploadButton.classList.remove("parsing");
+          uploadButton.classList.add("success");
+          uploadButton.textContent = "解析成功，数据已添加。点击关闭";
+          uploadButton.disabled = false;
+
+          // 点击关闭按钮时刷新页面
+          uploadButton.onclick = function () {
+            hideUploadModal();
+            location.reload();
+          };
         } catch (error) {
-          alert("上传失败：" + error.message);
+          // 处理失败状态
+          uploadButton.classList.remove("uploading", "parsing");
+          uploadButton.classList.add("error");
+          uploadButton.textContent = "处理失败：" + error.message;
+          uploadButton.disabled = false;
+          alert("处理失败：" + error.message);
         }
       }
 

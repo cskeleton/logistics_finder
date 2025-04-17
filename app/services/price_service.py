@@ -54,24 +54,26 @@ async def search_prices(location: str, goods_type: str = None) -> Dict[str, Any]
             )
         ]
         
-        # 如果有指定货物类型，添加货物类型条件
+        # 构建基础查询
+        base_query = db.query(Shipment)
         if normalized_goods_type:
-            # 使用LIKE查询匹配货物类型
-            goods_condition = or_(
-                ShipmentItem.goods_type.like(f'%{normalized_goods_type}%'),
-                Shipment.raw_goods.like(f'%{normalized_goods_type}%')
-            )
-            
-            # 查询符合条件的运单
-            shipments = db.query(Shipment).join(ShipmentItem).filter(
+            base_query = base_query.join(ShipmentItem).filter(
                 and_(
                     *location_conditions,
-                    goods_condition
+                    or_(
+                        ShipmentItem.goods_type.like(f'%{normalized_goods_type}%'),
+                        Shipment.raw_goods.like(f'%{normalized_goods_type}%')
+                    )
                 )
-            ).distinct().order_by(Shipment.shipping_date.desc()).limit(10).all()
+            ).distinct()
         else:
-            # 只按地址查询
-            shipments = db.query(Shipment).filter(*location_conditions).order_by(Shipment.shipping_date.desc()).limit(10).all()
+            base_query = base_query.filter(*location_conditions)
+        
+        # 获取总记录数
+        total_count = base_query.count()
+        
+        # 获取最近10条记录
+        shipments = base_query.order_by(Shipment.shipping_date.desc()).limit(10).all()
         
         # 处理结果
         items = []
@@ -97,8 +99,8 @@ async def search_prices(location: str, goods_type: str = None) -> Dict[str, Any]
             })
         
         # 计算统计信息
-        count = len(items)
-        average_price = total_price / count if count > 0 else 0
+        count = total_count  # 使用总记录数
+        average_price = total_price / len(items) if items else 0  # 均价只基于显示的记录计算
         
         return {
             'stats': {

@@ -52,11 +52,6 @@ async def process_excel(df: pd.DataFrame):
     """处理Excel数据并存入数据库"""
     session = SessionLocal()
     try:
-        # 清空现有数据
-        session.query(ShipmentItem).delete()
-        session.query(Shipment).delete()
-        session.commit()
-
         # 跳过前两行（第一行是合并单元格，第二行是表头）
         df = df.iloc[2:]
 
@@ -138,7 +133,7 @@ async def process_excel(df: pd.DataFrame):
                     raw_goods=goods_info,  # 使用原始货物名称
                 )
                 session.add(shipment)
-                session.flush()  # 获取 shipment.id
+                session.flush()
 
                 # 为每个货物类型创建发货项目记录
                 for goods_type in goods_types:
