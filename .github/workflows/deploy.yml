@@ -17,6 +17,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Set up data directory and download database
+        run: |
+          mkdir -p app/data
+          chmod +x app/scripts/download_data.sh
+          ./app/scripts/download_data.sh
+
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v2
         with:
