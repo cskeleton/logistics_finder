@@ -295,6 +295,13 @@
           accept=".xlsx,.xls"
           style="margin-bottom: 15px"
         />
+        <input
+          type="password"
+          id="upload-password"
+          class="search-input"
+          placeholder="请输入上传密码"
+          style="margin-bottom: 15px"
+        />
         <button id="uploadButton" onclick="uploadFile()">上传</button>
       </div>
     </div>
@@ -311,10 +318,18 @@
 
       async function uploadFile() {
         const fileInput = document.getElementById("excel-file");
+        const passwordInput = document.getElementById("upload-password");
         const uploadButton = document.getElementById("uploadButton");
         const file = fileInput.files[0];
+        const password = passwordInput.value;
+
         if (!file) {
           alert("请选择文件");
+          return;
+        }
+
+        if (!password) {
+          alert("请输入上传密码");
           return;
         }
 
@@ -325,6 +340,7 @@
 
         const formData = new FormData();
         formData.append("file", file);
+        formData.append("password", password);
 
         try {
           // 上传中状态
@@ -337,6 +353,10 @@
             method: "POST",
             body: formData,
           });
+
+          if (response.status === 401) {
+            throw new Error("密码错误");
+          }
 
           const result = await response.json();
 

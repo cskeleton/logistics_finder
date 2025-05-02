@@ -11,5 +11,6 @@ services:
     restart: always
     environment:
       - TZ=Asia/Shanghai
+      - UPLOAD_PASSWORD=your_secure_password_here
     command: >
       sh -c "/app/scripts/download_data.sh && uvicorn app.main:app --host 0.0.0.0 --port 8000"

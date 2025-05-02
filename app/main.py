@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException, Request, BackgroundTasks
+from fastapi import FastAPI, UploadFile, File, HTTPException, Request, BackgroundTasks, Form
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -19,6 +19,9 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # 静态文件目录
 STATIC_DIR = os.path.join(os.path.dirname(BASE_DIR), "static")
 
+# 从环境变量获取上传密码
+UPLOAD_PASSWORD = os.getenv("UPLOAD_PASSWORD", "default_password")
+
 # 挂载静态文件
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 templates = Jinja2Templates(directory=STATIC_DIR)
@@ -27,9 +30,13 @@ templates = Jinja2Templates(directory=STATIC_DIR)
 pending_dfs = {}
 
 @app.post("/upload")
-async def upload_excel(file: UploadFile = File(...)):
+async def upload_excel(file: UploadFile = File(...), password: str = Form(...)):
     """上传Excel文件并处理数据"""
     try:
+        # 验证密码
+        if password != UPLOAD_PASSWORD:
+            raise HTTPException(status_code=401, detail="密码错误")
+        
         # 检查文件类型
         if not file.filename.endswith(('.xlsx', '.xls')):
             raise HTTPException(status_code=400, detail="只支持 .xlsx 或 .xls 格式的文件")
