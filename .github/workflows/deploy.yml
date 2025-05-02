@@ -81,6 +81,8 @@ jobs:
 
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v0.1.10
+        env:
+          UPLOAD_PASSWORD: ${{ secrets.UPLOAD_PASSWORD }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
