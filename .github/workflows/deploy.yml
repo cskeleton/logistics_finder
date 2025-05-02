@@ -1,6 +1,7 @@
 name: Build, Push and Deploy to VPS
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - master # 当代码推送到 master 分支时触发
