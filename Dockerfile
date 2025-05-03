@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y \
 
 # 复制项目文件
 COPY requirements.txt .
-COPY app/ ./app/
+COPY app/ .
 COPY static/ ./static/
 
 # 安装Python依赖

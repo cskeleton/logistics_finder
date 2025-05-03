@@ -2,6 +2,7 @@ version: "3.8"
 
 services:
   logistics_app: # 或者你之前设置的服务名，例如 web
+    container_name: logistics_finder
     # build: .  # <--- 删除或注释掉 build 指令
     image: ghcr.io/cskeleton/logistics_finder:latest # <--- 指定要拉取的镜像
     ports:

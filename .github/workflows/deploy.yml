@@ -79,11 +79,8 @@ jobs:
           source: "docker-compose.yml"
           target: "${{ secrets.VPS_DEPLOY_PATH }}"
           strip_components: 0
-
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v0.1.10
-        env:
-          UPLOAD_PASSWORD: ${{ secrets.UPLOAD_PASSWORD }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
@@ -91,6 +88,8 @@ jobs:
           port: ${{ secrets.VPS_SSH_PORT }}
           script: |
             cd ${{ secrets.VPS_DEPLOY_PATH }}
+            echo "Update the .env file on VPS..."
+            echo "UPLOAD_PASSWORD=${UPLOAD_PASSWORD}" > .env
             echo "Logging into GitHub Container Registry on VPS..."
             echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin # 在 VPS 上登录 GHCR
             echo "Pulling latest image..."
