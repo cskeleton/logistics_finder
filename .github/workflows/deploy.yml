@@ -2,6 +2,11 @@ name: Build, Push and Deploy to VPS
 
 on:
   workflow_dispatch:
+    inputs:
+      force_rebuild:
+        description: '是否强制全量构建（跳过缓存）'
+        required: false
+        default: 'false'
   push:
     branches:
       - master # 当代码推送到 master 分支时触发
@@ -42,6 +47,7 @@ jobs:
           tags: ghcr.io/${{ github.repository }}:latest,ghcr.io/${{ github.repository }}:${{ github.sha }} # 打两个标签：latest 和 commit SHA
           cache-from: type=gha # 启用 GitHub Actions 构建缓存 (可选)
           cache-to: type=gha,mode=max # (可选)
+          no-cache: ${{ github.event.inputs.force_rebuild == 'true' }} # 手动强制忽略缓存构建
 
       - name: Set up SSH
         uses: webfactory/ssh-agent@v0.7.0

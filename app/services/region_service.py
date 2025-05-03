@@ -1,8 +1,10 @@
+"""RegionService 模块：提供行政区划相关服务。"""
 import sqlite3
 import os
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Optional, Tuple
 
 class RegionService:
+    """行政区划服务类。"""
     def __init__(self):
         # 获取当前文件所在目录
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -11,22 +13,21 @@ class RegionService:
         self.conn = sqlite3.connect(self.db_path)
         self.conn.row_factory = sqlite3.Row
         self.cursor = self.conn.cursor()
-        
         # 初始化缓存
         self._init_cache()
-    
+
     def _init_cache(self):
         """初始化缓存，加载所有省份和直辖市"""
         # 加载所有省份
         self.cursor.execute("SELECT code, name FROM province")
         self.provinces = {row['name']: row['code'] for row in self.cursor.fetchall()}
-        
+
         # 加载所有直辖市（假设直辖市在province表中）
         self.municipalities = {}
         for name, code in self.provinces.items():
             if name in ['北京市', '上海市', '天津市', '重庆市']:
                 self.municipalities[name] = code
-        
+
         # 加载江苏省的城市（包括地级市和县级市）
         self.cursor.execute("""
             SELECT c.code, c.name 
@@ -35,7 +36,7 @@ class RegionService:
             WHERE p.name = '江苏省'
         """)
         self.jiangsu_cities = {row['name']: row['code'] for row in self.cursor.fetchall()}
-        
+
         # 加载江苏省的县级市
         self.cursor.execute("""
             SELECT a.code, a.name 
@@ -45,7 +46,7 @@ class RegionService:
             WHERE p.name = '江苏省' AND a.name LIKE '%市'
         """)
         self.jiangsu_county_cities = {row['name']: row['code'] for row in self.cursor.fetchall()}
-    
+
     def find_province(self, address: str) -> Optional[Tuple[str, str]]:
         """查找省份或直辖市
         
@@ -61,28 +62,28 @@ class RegionService:
             for province_name, province_code in self.provinces.items():
                 if province_name.startswith(prefix):
                     return (province_name, province_code)
-        
+
         # 检查是否匹配直辖市
         for city_name, city_code in self.municipalities.items():
             if address.startswith(city_name):
                 return (city_name, city_code)
-        
+
         # 检查是否是江苏省的城市（地级市）
         if len(address) >= 2:
             prefix = address[:2]
             for city_name, city_code in self.jiangsu_cities.items():
                 if city_name.startswith(prefix):
                     return ("江苏省", self.provinces["江苏省"])
-        
+
         # 检查是否是江苏省的县级市
         if len(address) >= 2:
             prefix = address[:2]
             for city_name, city_code in self.jiangsu_county_cities.items():
                 if city_name.startswith(prefix):
                     return ("江苏省", self.provinces["江苏省"])
-        
+
         return None
-    
+
     def find_city(self, address: str, province_code: str) -> Optional[Tuple[str, str]]:
         """查找城市
         
@@ -181,7 +182,7 @@ class RegionService:
                             result['city'] = city_name
                             city_found = True
                             break
-                
+
                 # 如果不是地级市，检查是否是县级市
                 if not city_found and len(address) >= 2:
                     prefix = address[:2]
@@ -192,7 +193,7 @@ class RegionService:
                             result['city'] = city_name
                             city_found = True
                             break
-                
+
                 # 如果找到了城市，查找区县
                 if city_found:
                     # 获取城市代码
@@ -201,13 +202,13 @@ class RegionService:
                         if name == result['city']:
                             city_code = code
                             break
-                    
+
                     if not city_code:
                         for name, code in self.jiangsu_county_cities.items():
                             if name == result['city']:
                                 city_code = code
                                 break
-                    
+
                     if city_code:
                         # 查找区县
                         area_info = self.find_area(address, city_code)
@@ -222,7 +223,7 @@ class RegionService:
                     WHERE provinceCode = ?
                 """, (province_code,))
                 cities = {row['name']: row['code'] for row in self.cursor.fetchall()}
-                
+
                 # 获取该省份下的所有区县
                 self.cursor.execute("""
                     SELECT a.code, a.name, a.cityCode 
@@ -231,7 +232,7 @@ class RegionService:
                     WHERE c.provinceCode = ?
                 """, (province_code,))
                 areas = {row['name']: (row['code'], row['cityCode']) for row in self.cursor.fetchall()}
-                
+
                 # 先尝试匹配地级市
                 city_found = False
                 for city_name, city_code in cities.items():
@@ -246,7 +247,7 @@ class RegionService:
                             area_name, _ = area_info
                             result['area'] = area_name
                         break
-                
+
                 # 如果没有找到地级市，检查是否是县级市
                 if not city_found:
                     for area_name, (area_code, city_code) in areas.items():
@@ -262,9 +263,9 @@ class RegionService:
                                 result['city'] = city_row['name']
                                 result['area'] = area_name
                             break
-        
+
         return result
-    
+
     def find_area(self, address: str, city_code: str) -> Optional[Tuple[str, str]]:
         """查找区县
         
@@ -281,14 +282,14 @@ class RegionService:
             WHERE cityCode = ?
         """, (city_code,))
         areas = {row['name']: row['code'] for row in self.cursor.fetchall()}
-        
+
         # 检查地址中是否包含区县名
         for area_name, area_code in areas.items():
             if area_name in address:
                 return (area_name, area_code)
-        
+
         return None
-    
+
     def __del__(self):
         """关闭数据库连接"""
         if hasattr(self, 'conn'):

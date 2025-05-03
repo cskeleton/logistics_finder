@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   logistics_app: # 或者你之前设置的服务名，例如 web
     container_name: logistics_finder
@@ -8,10 +6,9 @@ services:
     ports:
       - "127.0.0.1:18000:8000"
     volumes:
-      - /opt/logistics/:/app/data
+      - /opt/logistics/:/app/app/data
+      - /opt/logistics/.env:/app/.env
     restart: always
     environment:
       - TZ=Asia/Shanghai
       - UPLOAD_PASSWORD=${UPLOAD_PASSWORD}
-    command: >
-      sh -c "/app/scripts/download_data.sh && uvicorn app.main:app --host 0.0.0.0 --port 8000"
