@@ -71,6 +71,11 @@ async def process_excel(df: pd.DataFrame):
                         shipping_date = datetime.strptime(shipping_date, "%Y-%m-%d").date()
                     except ValueError:
                         shipping_date = datetime.now().date()
+                elif isinstance(shipping_date, (int, float)):  # 处理Excel数字日期格式
+                    try:
+                        shipping_date = datetime.fromordinal(int(shipping_date) + datetime(1900, 1, 1).toordinal() - 2).date()
+                    except (ValueError, TypeError):
+                        shipping_date = datetime.now().date()
                 elif isinstance(shipping_date, datetime):
                     shipping_date = shipping_date.date()
 

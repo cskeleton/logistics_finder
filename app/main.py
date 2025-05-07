@@ -44,7 +44,7 @@ async def upload_excel(file: UploadFile = File(...), password: str = Form(...)):
         # 读取Excel文件
         try:
             contents = await file.read()
-            df = pd.read_excel(BytesIO(contents))
+            df = pd.read_excel(BytesIO(contents), skiprows=1)
             print(f"Excel文件读取成功，列名: {df.columns.tolist()}")
         except Exception as e:
             print(f"Excel文件读取失败: {str(e)}")
