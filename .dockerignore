@@ -5,7 +5,6 @@ __pycache__
 *.pyd
 .DS_Store
 .env
-*.sh
 Dockerfile
 docker-compose.yml
 .db
